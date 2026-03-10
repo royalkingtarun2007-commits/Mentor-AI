@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
+@import "tailwindcss";
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: #020206;
+  color: #f0f0ff;
+  font-family: 'Syne', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+input, textarea {
+  outline: none;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #020206; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #00d4ff; }
+::selection { background: rgba(0,212,255,0.15); color: #00d4ff; }
+
+/* Markdown in chat */
+.prose { color: #d0d0e8; line-height: 1.75; }
+.prose h1,.prose h2,.prose h3 { color: #f0f0ff; font-family: 'Syne',sans-serif; margin: 1.2em 0 0.4em; }
+.prose p { margin-bottom: 1em; }
+.prose ul,.prose ol { padding-left: 1.5em; margin-bottom: 1em; }
+.prose li { margin-bottom: 0.3em; }
+.prose code { color: #00d4ff; background: rgba(0,212,255,0.08); padding: 0.1em 0.4em; border-radius: 4px; font-family: 'JetBrains Mono',monospace; font-size: 0.875em; }
+.prose pre { background: #08080f; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 1em 1.25em; overflow-x: auto; margin-bottom: 1em; }
+.prose pre code { background: none; padding: 0; color: #c0c0d8; }
+.prose strong { color: #f0f0ff; }
+.prose blockquote { border-left: 3px solid rgba(0,212,255,0.3); padding-left: 1em; color: #8888aa; font-style: italic; }

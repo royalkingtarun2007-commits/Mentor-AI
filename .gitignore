@@ -1,0 +1,23 @@
+# ----------------
+# BACKEND (Python)
+# ----------------
+backend/venv/
+backend/__pycache__/
+backend/**/*.pyc
+backend/.env
+
+# ----------------
+# FRONTEND (Node)
+# ----------------
+frontend/node_modules/
+
+# ----------------
+# GENERAL
+# ----------------
+.env
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+*.pem
+Thumbs.db
