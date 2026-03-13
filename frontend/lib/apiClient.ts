@@ -6,11 +6,10 @@ export async function apiRequest(
 ) {
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
-    credentials: "include",
     headers: {
-      "Content-Type": "application/json",
       ...(options.headers || {}),
     },
+    credentials: "include",
   });
 
   if (!res.ok) {
