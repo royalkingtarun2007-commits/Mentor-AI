@@ -4,17 +4,16 @@ export async function apiRequest(
   endpoint: string,
   options: RequestInit = {}
 ) {
+  const token = localStorage.getItem("access_token");
+
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
       ...(options.headers || {}),
+      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
     },
-    credentials: "include",
   });
 
-  if (!res.ok) {
-    throw new Error("API request failed");
-  }
-
+  if (!res.ok) throw new Error("API request failed");
   return res.json();
 }
