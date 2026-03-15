@@ -1,66 +1,57 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export async function fetchNotes() {
-  const res = await fetch(`${API_URL}/notes/`, {
-    credentials: "include",
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch notes");
-  }
-
-  return res.json();
+function getHeaders(): Record<string, string> {
+  const token = typeof window !== "undefined"
+    ? localStorage.getItem("access_token")
+    : null;
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+  };
 }
 
-export async function createNote(note: {
+export interface Note {
+  id: number;
   title: string;
   content: string;
-  tags: string;
-}) {
+  ai_summary?: string;
+  tags?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export async function fetchNotes(): Promise<Note[]> {
+  const res = await fetch(`${API_URL}/notes/`, {
+    headers: getHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch notes");
+  return res.json();
+}
+
+export async function createNote(data: { title: string; content: string; tags?: string }): Promise<Note> {
   const res = await fetch(`${API_URL}/notes/`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(note),
+    headers: getHeaders(),
+    body: JSON.stringify(data),
   });
-
-  if (!res.ok) {
-    const error = await res.json();
-    console.error("Create note error:", error);
-    throw new Error("Failed to create note");
-  }
-
+  if (!res.ok) throw new Error("Failed to create note");
   return res.json();
 }
 
-export async function deleteNote(id: number) {
-  const res = await fetch(`${API_URL}/notes/${id}`, {
-    method: "DELETE",
-    credentials: "include",
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to delete note");
-  }
-}
-
-// ... keep fetchNotes, createNote, deleteNote ...
-
-export async function updateNote(id: number, note: { title: string; content: string }) {
+export async function updateNote(id: number, data: { title?: string; content?: string }): Promise<Note> {
   const res = await fetch(`${API_URL}/notes/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(note),
+    headers: getHeaders(),
+    body: JSON.stringify(data),
   });
-
-  if (!res.ok) {
-    const error = await res.json();
-    console.error("Update note error:", error);
-    throw new Error("Failed to update note");
-  }
-
+  if (!res.ok) throw new Error("Failed to update note");
   return res.json();
+}
+
+export async function deleteNote(id: number): Promise<void> {
+  const res = await fetch(`${API_URL}/notes/${id}`, {
+    method: "DELETE",
+    headers: getHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete note");
 }

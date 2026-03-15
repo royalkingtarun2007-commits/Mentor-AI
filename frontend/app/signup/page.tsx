@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, ArrowRight, Lock, Mail, Sparkles } from "lucide-react";
+import { signup } from "@/lib/auth";
 
 const syne = { fontFamily: "'Syne', sans-serif" };
 const mono = { fontFamily: "'JetBrains Mono', monospace" };
@@ -22,16 +23,11 @@ export default function SignupPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
-      if (!res.ok) throw new Error("Signup failed");
-      router.push("/login");
-    } catch {
-      setError("Unable to create account. Try again.");
+      await signup(email, password);
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unable to create account";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -76,7 +72,6 @@ export default function SignupPage() {
       >
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "40px", boxShadow: "0 32px 80px rgba(0,0,0,0.6)", backdropFilter: "blur(20px)", position: "relative", overflow: "hidden" }}>
 
-          {/* Top glow line — emerald */}
           <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: "1px", background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.6), transparent)" }} />
 
           {/* Header */}
@@ -192,9 +187,11 @@ export default function SignupPage() {
 
           <p style={{ textAlign: "center", ...mono, fontSize: "12px", color: "#44445a", marginTop: "24px" }}>
             have account?{" "}
-            <Link href="/login" style={{ color: "#10b981", textDecoration: "none" }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = "0.7")}
-              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+            <Link
+              href="/login"
+              style={{ color: "#10b981", textDecoration: "none" }}
+              onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.opacity = "0.7")}
+              onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.opacity = "1")}
             >
               sign_in()
             </Link>

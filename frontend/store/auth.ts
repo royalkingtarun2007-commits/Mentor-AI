@@ -19,18 +19,34 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setUser: (user) => set({ user }),
 
-  logout: () => set({ user: null }),
+  logout: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("access_token");
+    }
+    set({ user: null });
+  },
 
   checkAuth: async () => {
     try {
+      if (typeof window === "undefined") return;
+
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        set({ user: null });
+        return;
+      }
+
       const res = await fetch(`${API_URL}/me`, {
-        credentials: "include",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
       });
 
       if (res.ok) {
         const data = await res.json();
         set({ user: data });
       } else {
+        localStorage.removeItem("access_token");
         set({ user: null });
       }
     } catch {
