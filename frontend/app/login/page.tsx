@@ -19,27 +19,37 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const data = await login(email, password);
+ async function handleLogin(e: React.FormEvent) {
+  e.preventDefault();
+  setLoading(true);
+  setError("");
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ username: email, password }).toString(),
+    });
 
-      // Token already saved to localStorage by login()
-      // Set user directly in store — skip checkAuth to avoid /me 401
-      if (data.access_token) {
-        const setUser = useAuthStore.getState().setUser;
-        setUser({ id: 0, email: email });
-      }
+    if (!res.ok) throw new Error("Login failed");
 
+    const data = await res.json();
+    console.log("Login response:", data); // debug
+
+    if (data.access_token) {
+      localStorage.setItem("access_token", data.access_token);
+      console.log("Token saved:", localStorage.getItem("access_token")); // debug
+      const setUser = useAuthStore.getState().setUser;
+      setUser({ id: 0, email: email });
       router.push("/dashboard");
-    } catch {
-      setError("Invalid email or password");
-    } finally {
-      setLoading(false);
+    } else {
+      setError("No token received");
     }
+  } catch {
+    setError("Invalid email or password");
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div style={{ minHeight: "100vh", background: "#030308", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden", padding: "24px" }}>
