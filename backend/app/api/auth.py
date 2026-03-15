@@ -60,13 +60,13 @@ def login(
 
     access_token = create_access_token({"sub": user.email})
 
-    # 🔥 LOCALHOST SAFE COOKIE CONFIG
+    # Production safe cookie for Vercel + Render
     response.set_cookie(
         key="accessToken",
         value=access_token,
         httponly=True,
-        samesite="lax",   # correct for localhost
-        secure=False      # must be False on http
+        samesite="none",
+        secure=True
     )
 
     return {

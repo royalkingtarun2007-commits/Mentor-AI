@@ -12,6 +12,8 @@ interface AuthState {
   checkAuth: () => Promise<void>;
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
 
@@ -21,7 +23,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   checkAuth: async () => {
     try {
-      const res = await fetch("http://localhost:8000/me", {
+      const res = await fetch(`${API_URL}/me`, {
         credentials: "include",
       });
 
@@ -31,7 +33,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       } else {
         set({ user: null });
       }
-    } catch (err) {
+    } catch {
       set({ user: null });
     }
   },
