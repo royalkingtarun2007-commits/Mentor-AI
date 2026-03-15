@@ -11,10 +11,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const checkAuth = useAuthStore((state) => state.checkAuth);
+  const setUser = useAuthStore((state) => state.setUser);
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    // Only run on client, only if token exists
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      checkAuth();
+    } else {
+      setUser(null);
+    }
+  }, [checkAuth, setUser]);
 
   return (
     <html lang="en">
@@ -24,11 +32,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
       </head>
-      <body className="bg-[#020206] text-white">
+      <body style={{ background: "#030308", color: "#f0f0ff" }}>
         <Navbar />
         {children}
       </body>

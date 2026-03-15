@@ -18,15 +18,21 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const checkAuth = useAuthStore((state) => state.checkAuth);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
-      await login(email, password);
-      await checkAuth();
+      const data = await login(email, password);
+
+      // Token already saved to localStorage by login()
+      // Set user directly in store — skip checkAuth to avoid /me 401
+      if (data.access_token) {
+        const setUser = useAuthStore.getState().setUser;
+        setUser({ id: 0, email: email });
+      }
+
       router.push("/dashboard");
     } catch {
       setError("Invalid email or password");
@@ -72,9 +78,8 @@ export default function LoginPage() {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: "440px" }}
       >
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "40px", boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", position: "relative", overflow: "hidden" }}>
+        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "40px", boxShadow: "0 32px 80px rgba(0,0,0,0.6)", backdropFilter: "blur(20px)", position: "relative", overflow: "hidden" }}>
 
-          {/* Card top glow line */}
           <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: "1px", background: "linear-gradient(90deg, transparent, rgba(0,212,255,0.5), transparent)" }} />
 
           {/* Header */}
@@ -109,7 +114,6 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
 
-            {/* Email */}
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -129,7 +133,6 @@ export default function LoginPage() {
               />
             </motion.div>
 
-            {/* Password */}
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
@@ -158,7 +161,6 @@ export default function LoginPage() {
               </button>
             </motion.div>
 
-            {/* Error */}
             {error && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -170,7 +172,6 @@ export default function LoginPage() {
               </motion.div>
             )}
 
-            {/* Submit */}
             <motion.button
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -194,9 +195,11 @@ export default function LoginPage() {
 
           <p style={{ textAlign: "center", ...mono, fontSize: "12px", color: "#44445a", marginTop: "24px" }}>
             no account?{" "}
-            <Link href="/signup" style={{ color: "#00d4ff", textDecoration: "none" }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = "0.7")}
-              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+            <Link
+              href="/signup"
+              style={{ color: "#00d4ff", textDecoration: "none" }}
+              onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.opacity = "0.7")}
+              onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.opacity = "1")}
             >
               create_one()
             </Link>
