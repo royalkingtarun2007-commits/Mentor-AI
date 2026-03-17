@@ -1,5 +1,5 @@
 "use client";
-import { apiRequest } from "@/lib/api";
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Send, Bot, User, Sparkles, BookOpen, Loader2, Copy, Check, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,31 +67,17 @@ export default function ChatPage() {
   }, []);
 
   const loadChatHistory = useCallback(async (chatId: number) => {
-  if (chatId === -1) { 
-    setMessages([WELCOME]); 
-    return; 
-  }
-
-  setHistoryLoading(true);
-
-  try {
-    const data = await apiRequest(`/ai/history/${chatId}`);
-
-    setMessages(
-      data.length === 0
-        ? [WELCOME]
-        : data.map((m: { role: string; content: string }) => ({
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          }))
-    );
-
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setHistoryLoading(false);
-  }
-}, []);
+    if (chatId === -1) { setMessages([WELCOME]); return; }
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/history/${chatId}`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.length === 0 ? [WELCOME] : data.map((m: { role: string; content: string }) => ({ role: m.role as "user" | "assistant", content: m.content })));
+      }
+    } catch (err) { console.error(err); }
+    finally { setHistoryLoading(false); }
+  }, []);
 
   const handleSelectChat = useCallback((id: number) => {
     setCurrentChatId(id);
@@ -107,38 +93,20 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-  const data = await apiRequest("/ai/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      message: sentInput,
-      chat_id: currentChatId === -1 ? null : currentChatId,
-    }),
-  });
-
-  setMessages(prev => [
-    ...prev,
-    {
-      role: "assistant",
-      content: data.response,
-      contextUsed: data.context_used?.filter((n: string) => n),
-    },
-  ]);
-
-  if (data.chat_id && data.chat_id !== currentChatId) {
-    setCurrentChatId(data.chat_id);
-  }
-
-  setSidebarRefresh(prev => prev + 1);
-
-} catch {
-  setMessages(prev => [
-    ...prev,
-    { role: "assistant", content: "Sorry, something went wrong. Please try again." },
-  ]);
-}
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: sentInput, chat_id: currentChatId === -1 ? null : currentChatId }),
+        credentials: "include",
+      });
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: "assistant", content: data.response, contextUsed: data.context_used?.filter((n: string) => n) }]);
+      if (data.chat_id && data.chat_id !== currentChatId) setCurrentChatId(data.chat_id);
+      setSidebarRefresh(prev => prev + 1);
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
+    } finally { setLoading(false); }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
@@ -266,5 +234,4 @@ export default function ChatPage() {
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}`}</style>
     </div>
   );
-}
 }
