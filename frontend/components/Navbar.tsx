@@ -6,6 +6,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Zap, LogOut, Menu, X } from "lucide-react";
 
+const syne = { fontFamily: "'Syne', sans-serif" };
+
 export default function Navbar() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -23,11 +25,7 @@ export default function Navbar() {
   }, []);
 
   async function handleLogout() {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-    logout();
+    logout(); // clears localStorage token
     router.push("/login");
   }
 
@@ -35,57 +33,62 @@ export default function Navbar() {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/notes", label: "Notes" },
     { href: "/chat", label: "Chat" },
+    { href: "/summary", label: "Summary" },
   ];
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-[#020206]/90 backdrop-blur-xl border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.5)]"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+    <header style={{
+      position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
+      transition: "all 0.3s",
+      background: scrolled ? "rgba(3,3,8,0.9)" : "transparent",
+      backdropFilter: scrolled ? "blur(20px)" : "none",
+      borderBottom: scrolled ? "1px solid rgba(255,255,255,0.05)" : "none",
+    }}>
+      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 24px", height: "64px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
 
         {/* Logo */}
-        <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-[#00d4ff]/10 border border-[#00d4ff]/30 flex items-center justify-center group-hover:bg-[#00d4ff]/20 transition-all group-hover:shadow-[0_0_12px_rgba(0,212,255,0.4)]">
-            <Zap size={16} className="text-[#00d4ff]" fill="currentColor" />
+        <Link href={user ? "/dashboard" : "/"} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Zap size={15} style={{ color: "#00d4ff" }} fill="#00d4ff" />
           </div>
-          <span className="font-display font-bold text-lg tracking-tight">
-            <span className="text-white">Mentor</span>
-            <span className="text-[#00d4ff]">AI</span>
+          <span style={{ ...syne, fontWeight: 700, fontSize: "16px" }}>
+            <span style={{ color: "#ffffff" }}>Mentor</span>
+            <span style={{ color: "#00d4ff" }}>AI</span>
           </span>
         </Link>
 
         {/* Desktop nav */}
         {!isAuthPage && user && (
-          <nav className="hidden md:flex items-center gap-1">
+          <nav style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 font-display tracking-wide ${
-                  pathname === link.href
-                    ? "text-[#00d4ff] bg-[#00d4ff]/8"
-                    : "text-[#8888aa] hover:text-white hover:bg-white/5"
-                }`}
+                style={{
+                  textDecoration: "none",
+                  padding: "8px 16px",
+                  borderRadius: "10px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  ...syne,
+                  color: pathname === link.href ? "#00d4ff" : "#8888aa",
+                  background: pathname === link.href ? "rgba(0,212,255,0.08)" : "transparent",
+                  transition: "all 0.2s",
+                }}
               >
-                {pathname === link.href && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#00d4ff]" />
-                )}
                 {link.label}
               </Link>
             ))}
 
-            <div className="w-px h-5 bg-white/10 mx-2" />
+            <div style={{ width: "1px", height: "20px", background: "rgba(255,255,255,0.1)", margin: "0 8px" }} />
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#8888aa] hover:text-red-400 hover:bg-red-500/5 transition-all font-display"
+              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "10px", background: "transparent", border: "none", cursor: "pointer", color: "#8888aa", ...syne, fontSize: "13px", transition: "all 0.2s" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#f87171"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#8888aa"; }}
             >
-              <LogOut size={14} />
-              Logout
+              <LogOut size={14} /> Logout
             </button>
           </nav>
         )}
@@ -94,38 +97,20 @@ export default function Navbar() {
         {!isAuthPage && user && (
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 text-[#8888aa] hover:text-white"
+            style={{ display: "none", padding: "8px", background: "none", border: "none", cursor: "pointer", color: "#8888aa" }}
+            className="mobile-menu-btn"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         )}
       </div>
 
-      {/* Mobile menu */}
-      {mobileOpen && !isAuthPage && user && (
-        <div className="md:hidden bg-[#08080f]/95 backdrop-blur-xl border-b border-white/5 px-6 py-4 space-y-1 animate-fade-in">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMobileOpen(false)}
-              className={`block px-4 py-3 rounded-lg text-sm font-display font-medium transition-all ${
-                pathname === link.href
-                  ? "text-[#00d4ff] bg-[#00d4ff]/8"
-                  : "text-[#8888aa] hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-          <button
-            onClick={handleLogout}
-            className="w-full text-left px-4 py-3 rounded-lg text-sm font-display text-red-400 hover:bg-red-500/5 transition-all"
-          >
-            Logout
-          </button>
-        </div>
-      )}
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-menu-btn { display: flex !important; }
+          nav { display: none !important; }
+        }
+      `}</style>
     </header>
   );
 }

@@ -1,19 +1,31 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { apiRequest } from "./api";
 
-export async function chatWithNotes(message: string) {
-  const res = await fetch(`${API_URL}/ai/chat`, {
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatResponse {
+  response: string;
+  context_used: string[];
+  chat_id: number;
+  chat_title: string;
+}
+
+export async function chatWithNotes(
+  message: string,
+  chat_id: number | null = null
+): Promise<ChatResponse> {
+  return apiRequest("/ai/chat", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, chat_id }),
   });
+}
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.detail || "Chat failed");
-  }
+export async function getChatHistory(chatId: number): Promise<ChatMessage[]> {
+  return apiRequest(`/ai/history/${chatId}`);
+}
 
-  return res.json();
+export async function summarizeNote(noteId: number) {
+  return apiRequest(`/ai/summarize?note_id=${noteId}`, { method: "POST" });
 }

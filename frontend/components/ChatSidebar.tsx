@@ -6,11 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api";
 
-interface Chat {
-  id: number;
-  title: string;
-}
-
+interface Chat { id: number; title: string; }
 interface SidebarProps {
   currentChatId: number;
   setCurrentChatId: (id: number) => void;
@@ -30,14 +26,10 @@ export default function ChatSidebar({ currentChatId, setCurrentChatId, refreshKe
     try {
       const data = await apiRequest("/chats/");
       setChats(data);
-    } catch (err) {
-      console.error("Failed to fetch chats", err);
-    }
+    } catch (err) { console.error("Failed to fetch chats", err); }
   }, []);
 
-  useEffect(() => {
-    fetchChats();
-  }, [currentChatId, refreshKey, fetchChats]);
+  useEffect(() => { fetchChats(); }, [currentChatId, refreshKey, fetchChats]);
 
   const deleteChat = async (id: number) => {
     if (!confirm("Delete this conversation?")) return;
@@ -59,7 +51,6 @@ export default function ChatSidebar({ currentChatId, setCurrentChatId, refreshKe
 
   return (
     <aside style={{ width: "260px", height: "100%", display: "flex", flexDirection: "column", background: "#08080f", borderRight: "1px solid rgba(255,255,255,0.05)", flexShrink: 0 }}>
-
       <div style={{ padding: "16px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <Link href="/dashboard" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
           <div style={{ width: "28px", height: "28px", borderRadius: "8px", background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -69,13 +60,9 @@ export default function ChatSidebar({ currentChatId, setCurrentChatId, refreshKe
             <span style={{ color: "#ffffff" }}>Mentor</span><span style={{ color: "#00d4ff" }}>AI</span>
           </span>
         </Link>
-
-        <motion.button
-          whileHover={{ background: "rgba(0,212,255,0.15)" }}
-          whileTap={{ scale: 0.97 }}
+        <motion.button whileHover={{ background: "rgba(0,212,255,0.15)" }} whileTap={{ scale: 0.97 }}
           onClick={() => setCurrentChatId(-1)}
-          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "10px", borderRadius: "12px", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.2)", color: "#00d4ff", cursor: "pointer", ...syne, fontSize: "13px", fontWeight: 600 }}
-        >
+          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "10px", borderRadius: "12px", background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.2)", color: "#00d4ff", cursor: "pointer", ...syne, fontSize: "13px", fontWeight: 600 }}>
           <Plus size={14} /> New Chat
         </motion.button>
       </div>
@@ -87,60 +74,43 @@ export default function ChatSidebar({ currentChatId, setCurrentChatId, refreshKe
             <p style={{ ...mono, color: "#44445a", fontSize: "11px" }}>no chats yet</p>
           </div>
         )}
-
         <AnimatePresence>
           {chats.map((chat) => (
-            <motion.div
-              key={chat.id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              style={{
-                position: "relative", display: "flex", alignItems: "center", gap: "8px",
-                padding: "10px 12px", borderRadius: "10px", cursor: "pointer", marginBottom: "2px",
-                background: currentChatId === chat.id ? "rgba(0,212,255,0.08)" : "transparent",
-                border: currentChatId === chat.id ? "1px solid rgba(0,212,255,0.15)" : "1px solid transparent",
-                color: currentChatId === chat.id ? "#ffffff" : "#8888aa",
-              }}
-              onMouseEnter={e => { if (currentChatId !== chat.id) { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; } }}
-              onMouseLeave={e => { if (currentChatId !== chat.id) { (e.currentTarget as HTMLDivElement).style.background = "transparent"; } setMenuOpenId(null); }}
+            <motion.div key={chat.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}
+              onMouseLeave={() => setMenuOpenId(null)}
+              style={{ position: "relative", display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", borderRadius: "10px", cursor: "pointer", marginBottom: "2px", background: currentChatId === chat.id ? "rgba(0,212,255,0.08)" : "transparent", border: currentChatId === chat.id ? "1px solid rgba(0,212,255,0.15)" : "1px solid transparent", color: currentChatId === chat.id ? "#ffffff" : "#8888aa", transition: "all 0.15s" }}
+              onMouseEnter={e => { if (currentChatId !== chat.id) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
             >
               <MessageSquare size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
-
               {editingId === chat.id ? (
                 <div style={{ display: "flex", alignItems: "center", flex: 1, gap: "4px" }}>
-                  <input autoFocus value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && renameChat(chat.id)}
-                    style={{ flex: 1, background: "#0d0d1a", border: "1px solid rgba(0,212,255,0.4)", borderRadius: "6px", padding: "2px 6px", ...mono, fontSize: "11px", color: "#ffffff" }}
-                  />
+                  <input autoFocus value={editTitle} onChange={(e) => setEditTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && renameChat(chat.id)}
+                    style={{ flex: 1, background: "#0d0d1a", border: "1px solid rgba(0,212,255,0.4)", borderRadius: "6px", padding: "2px 6px", ...mono, fontSize: "11px", color: "#ffffff" }} />
                   <button onClick={() => renameChat(chat.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#10b981" }}><Check size={11} /></button>
                   <button onClick={() => setEditingId(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#44445a" }}><X size={11} /></button>
                 </div>
               ) : (
-                <span onClick={() => setCurrentChatId(chat.id)}
-                  style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...syne, fontSize: "12px" }}>
+                <span onClick={() => setCurrentChatId(chat.id)} style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...syne, fontSize: "12px" }}>
                   {chat.title}
                 </span>
               )}
-
               <div style={{ position: "relative", flexShrink: 0 }}>
                 <button onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === chat.id ? null : chat.id); }}
                   style={{ background: "none", border: "none", cursor: "pointer", color: "#44445a", padding: "2px", display: "flex" }}>
                   <MoreVertical size={11} />
                 </button>
-
                 <AnimatePresence>
                   {menuOpenId === chat.id && (
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.1 }}
                       style={{ position: "absolute", right: 0, top: "20px", width: "130px", background: "#0d0d1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", zIndex: 100, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
                       <button onClick={() => { setEditingId(chat.id); setEditTitle(chat.title); setMenuOpenId(null); }}
-                        style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", background: "none", border: "none", cursor: "pointer", ...mono, fontSize: "11px", color: "#8888aa" }}
+                        style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", background: "none", border: "none", cursor: "pointer", ...mono, fontSize: "11px", color: "#8888aa", textAlign: "left" }}
                         onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
                         onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                         <Edit3 size={10} /> Rename
                       </button>
                       <button onClick={() => deleteChat(chat.id)}
-                        style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", background: "none", border: "none", cursor: "pointer", ...mono, fontSize: "11px", color: "#f87171" }}
+                        style={{ width: "100%", display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", background: "none", border: "none", cursor: "pointer", ...mono, fontSize: "11px", color: "#f87171", textAlign: "left" }}
                         onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,0.08)")}
                         onMouseLeave={e => (e.currentTarget.style.background = "none")}>
                         <Trash2 size={10} /> Delete
