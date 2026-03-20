@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import ChatSidebar from "@/components/ChatSidebar";
+import { apiRequest } from "@/lib/api";
 
 interface Message {
   role: "user" | "assistant";
@@ -70,13 +71,16 @@ export default function ChatPage() {
     if (chatId === -1) { setMessages([WELCOME]); return; }
     setHistoryLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/history/${chatId}`, { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data.length === 0 ? [WELCOME] : data.map((m: { role: string; content: string }) => ({ role: m.role as "user" | "assistant", content: m.content })));
-      }
-    } catch (err) { console.error(err); }
-    finally { setHistoryLoading(false); }
+      const data = await apiRequest(`/ai/history/${chatId}`);
+      setMessages(data.length === 0 ? [WELCOME] : data.map((m: { role: string; content: string }) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setHistoryLoading(false);
+    }
   }, []);
 
   const handleSelectChat = useCallback((id: number) => {
@@ -93,19 +97,32 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/chat`, {
+      const data = await apiRequest("/ai/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: sentInput, chat_id: currentChatId === -1 ? null : currentChatId }),
-        credentials: "include",
+        body: JSON.stringify({
+          message: sentInput,
+          chat_id: currentChatId === -1 ? null : currentChatId,
+        }),
       });
-      const data = await res.json();
-      setMessages(prev => [...prev, { role: "assistant", content: data.response, contextUsed: data.context_used?.filter((n: string) => n) }]);
-      if (data.chat_id && data.chat_id !== currentChatId) setCurrentChatId(data.chat_id);
+
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: data.response,
+        contextUsed: data.context_used?.filter((n: string) => n),
+      }]);
+
+      if (data.chat_id && data.chat_id !== currentChatId) {
+        setCurrentChatId(data.chat_id);
+      }
       setSidebarRefresh(prev => prev + 1);
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, something went wrong. Please try again." }]);
-    } finally { setLoading(false); }
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: "Sorry, something went wrong. Please try again.",
+      }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -134,13 +151,13 @@ export default function ChatPage() {
             </div>
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
-            <motion.button whileHover={{ background: "rgba(255,255,255,0.07)", color: "#ffffff" }}
+            <motion.button whileHover={{ background: "rgba(255,255,255,0.07)" }}
               onClick={() => { setCurrentChatId(-1); setMessages([WELCOME]); setInput(""); }}
               style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", borderRadius: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#8888aa", cursor: "pointer", ...syne, fontSize: "12px", transition: "all 0.2s" }}>
               <Plus size={13} /> New Chat
             </motion.button>
             <Link href="/notes" style={{ textDecoration: "none" }}>
-              <motion.div whileHover={{ background: "rgba(0,212,255,0.1)", color: "#00d4ff", borderColor: "rgba(0,212,255,0.25)" }}
+              <motion.div whileHover={{ background: "rgba(0,212,255,0.1)" }}
                 style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", borderRadius: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#8888aa", cursor: "pointer", ...syne, fontSize: "12px", transition: "all 0.2s" }}>
                 <BookOpen size={13} /> Notes
               </motion.div>
@@ -175,7 +192,7 @@ export default function ChatPage() {
                     <div style={{ position: "relative", padding: "14px 18px", borderRadius: msg.role === "user" ? "16px 4px 16px 16px" : "4px 16px 16px 16px", background: msg.role === "user" ? "rgba(0,212,255,0.08)" : "rgba(255,255,255,0.03)", border: msg.role === "user" ? "1px solid rgba(0,212,255,0.15)" : "1px solid rgba(255,255,255,0.06)", fontSize: "13px", lineHeight: 1.7, color: msg.role === "user" ? "#e0e0f0" : "#d0d0e8" }}>
                       {msg.role === "assistant"
                         ? <div className="prose" style={{ ...mono }}><ReactMarkdown>{msg.content}</ReactMarkdown></div>
-                        : <p style={{ ...mono }}>{msg.content}</p>
+                        : <p style={{ ...mono, margin: 0 }}>{msg.content}</p>
                       }
                       <CopyButton text={msg.content} />
                     </div>
@@ -211,8 +228,7 @@ export default function ChatPage() {
         {/* Input */}
         <div style={{ padding: "16px 24px 20px", borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(6,6,13,0.6)", flexShrink: 0 }}>
           <div style={{ maxWidth: "820px", margin: "0 auto" }}>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "14px 16px", transition: "border-color 0.2s" }}
-              onFocus={() => { }} >
+            <div style={{ display: "flex", alignItems: "flex-end", gap: "12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", padding: "14px 16px" }}>
               <textarea ref={inputRef} value={input}
                 onChange={(e) => { setInput(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px"; }}
                 onKeyDown={handleKeyDown}
