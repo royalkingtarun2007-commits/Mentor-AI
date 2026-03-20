@@ -1,74 +1,126 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/auth";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { BookOpen, MessageSquare, Sparkles, ArrowRight, Zap, Brain, Database, TrendingUp } from "lucide-react";
+import { BookOpen, MessageSquare, Sparkles, ArrowRight, Brain, Database, TrendingUp, Clock } from "lucide-react";
 
-const syne = { fontFamily: "'Syne', sans-serif" };
-const mono = { fontFamily: "'JetBrains Mono', monospace" };
+const jakarta = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
+const script = { fontFamily: "'Cormorant Garamond', serif" };
+const mono = { fontFamily: "'IBM Plex Mono', monospace" };
 
-// Floating orb component
-function Orb({ style }: { style: React.CSSProperties }) {
-  return (
-    <motion.div
-      animate={{ scale: [1, 1.08, 1], opacity: [0.6, 1, 0.6] }}
-      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-      style={{ position: "absolute", borderRadius: "50%", filter: "blur(80px)", pointerEvents: "none", ...style }}
-    />
-  );
-}
+// Aurora background — same as login/signup for consistency
+function AuroraBg() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-// Animated gradient ring
-function Ring({ size, color, delay = 0 }: { size: number; color: string; delay?: number }) {
-  return (
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 20 + delay * 5, repeat: Infinity, ease: "linear" }}
-      style={{
-        position: "absolute",
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        border: `1px solid ${color}`,
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        pointerEvents: "none",
-      }}
-    />
-  );
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+    let t = 0;
+    let animId: number;
+
+    function draw() {
+      t += 0.002; // slightly slower than login for a calm feel
+      ctx!.clearRect(0, 0, W, H);
+
+      ctx!.fillStyle = "#03030c";
+      ctx!.fillRect(0, 0, W, H);
+
+      const layers = [
+        { color1: "rgba(99,102,241,0.2)", color2: "rgba(99,102,241,0)", freq: 0.6, amp: 0.15, speed: 0.8, yBase: 0.3 },
+        { color1: "rgba(139,92,246,0.18)", color2: "rgba(139,92,246,0)", freq: 0.8, amp: 0.18, speed: 0.6, yBase: 0.25 },
+        { color1: "rgba(6,182,212,0.14)", color2: "rgba(6,182,212,0)", freq: 1.0, amp: 0.12, speed: 1.0, yBase: 0.35 },
+        { color1: "rgba(16,185,129,0.1)", color2: "rgba(16,185,129,0)", freq: 0.7, amp: 0.14, speed: 0.5, yBase: 0.28 },
+      ];
+
+      for (const layer of layers) {
+        ctx!.beginPath();
+        ctx!.moveTo(0, H);
+        for (let i = 0; i <= 80; i++) {
+          const x = (i / 80) * W;
+          const y = layer.yBase * H
+            + Math.sin(i * layer.freq * 0.1 + t * layer.speed) * layer.amp * H
+            + Math.sin(i * layer.freq * 0.07 + t * layer.speed * 1.2 + 1) * layer.amp * 0.4 * H;
+          ctx!.lineTo(x, y);
+        }
+        ctx!.lineTo(W, H);
+        ctx!.closePath();
+        const g = ctx!.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, layer.color1);
+        g.addColorStop(1, layer.color2);
+        ctx!.fillStyle = g;
+        ctx!.fill();
+      }
+
+      // Stars — subtle
+      for (let i = 0; i < 80; i++) {
+        const sx = ((i * 9311) % W);
+        const sy = ((i * 6271) % (H * 0.5));
+        const tw = (Math.sin(t * 2 + i * 0.8) + 1) / 2;
+        ctx!.fillStyle = `rgba(255,255,255,${0.1 + tw * 0.3})`;
+        ctx!.beginPath();
+        ctx!.arc(sx, sy, 0.5 + (i % 2) * 0.3, 0, Math.PI * 2);
+        ctx!.fill();
+      }
+
+      // Fade bottom heavily so page content is readable
+      const fade = ctx!.createLinearGradient(0, H * 0.4, 0, H);
+      fade.addColorStop(0, "transparent");
+      fade.addColorStop(1, "rgba(3,3,12,1)");
+      ctx!.fillStyle = fade;
+      ctx!.fillRect(0, 0, W, H);
+
+      animId = requestAnimationFrame(draw);
+    }
+
+    draw();
+
+    const onResize = () => { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; };
+    window.addEventListener("resize", onResize);
+    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", onResize); };
+  }, []);
+
+  return <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }} />;
 }
 
 export default function Dashboard() {
   const user = useAuthStore((state) => state.user);
 
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap";
+    link.rel = "stylesheet";
+    document.head.appendChild(link);
+  }, []);
+
   const features = [
     {
       icon: BookOpen,
       title: "Knowledge Base",
-      description: "Everything you save becomes searchable intelligence. Notes are vectorized and stored for instant semantic retrieval.",
+      description: "Everything you save becomes searchable intelligence. Notes are vectorized for instant semantic retrieval.",
       href: "/notes",
-      gradient: "linear-gradient(135deg, rgba(0,212,255,0.15) 0%, rgba(0,212,255,0.03) 100%)",
-      borderGlow: "rgba(0,212,255,0.3)",
-      iconColor: "#00d4ff",
-      iconGlow: "rgba(0,212,255,0.3)",
-      tag: "RAG ENABLED",
-      tagColor: "#00d4ff",
+      accent: "#6366f1",
+      accentDim: "rgba(99,102,241,0.08)",
+      accentBorder: "rgba(99,102,241,0.2)",
       cta: "Open Notes",
       number: "01",
     },
     {
       icon: MessageSquare,
       title: "AI Chat",
-      description: "Chat with an AI that only knows what you've taught it. Powered by your notes, not the entire internet.",
+      description: "Chat with an AI that only knows what you've taught it. Powered by your notes, not the internet.",
       href: "/chat",
-      gradient: "linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(139,92,246,0.03) 100%)",
-      borderGlow: "rgba(139,92,246,0.3)",
-      iconColor: "#8b5cf6",
-      iconGlow: "rgba(139,92,246,0.3)",
-      tag: "VECTOR SEARCH",
-      tagColor: "#a78bfa",
+      accent: "#8b5cf6",
+      accentDim: "rgba(139,92,246,0.08)",
+      accentBorder: "rgba(139,92,246,0.2)",
       cta: "Start Chat",
       number: "02",
     },
@@ -77,142 +129,109 @@ export default function Dashboard() {
       title: "Smart Summary",
       description: "Drop in any note and get a structured, AI-generated summary with key points extracted instantly.",
       href: "/summary",
-      gradient: "linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(16,185,129,0.03) 100%)",
-      borderGlow: "rgba(16,185,129,0.3)",
-      iconColor: "#10b981",
-      iconGlow: "rgba(16,185,129,0.3)",
-      tag: "LLM POWERED",
-      tagColor: "#34d399",
+      accent: "#06b6d4",
+      accentDim: "rgba(6,182,212,0.08)",
+      accentBorder: "rgba(6,182,212,0.2)",
       cta: "Try Summary",
       number: "03",
     },
   ];
 
+  const stats = [
+    { icon: Database, label: "Architecture", value: "RAG + pgvector", color: "#6366f1" },
+    { icon: Brain, label: "AI Model", value: "LLaMA 3.3 70B", color: "#8b5cf6" },
+    { icon: Clock, label: "Inference", value: "Groq Cloud", color: "#f59e0b" },
+    { icon: TrendingUp, label: "Response", value: "< 1 second", color: "#10b981" },
+  ];
+
   return (
-    <div style={{ minHeight: "100vh", background: "#030308", color: "#f0f0ff", overflowX: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "#03030c", color: "#f0f0ff", overflowX: "hidden", position: "relative" }}>
+      <AuroraBg />
 
-      {/* ── HERO SECTION ── */}
-      <div style={{ position: "relative", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 24px 60px" }}>
+      {/* ── HERO ── */}
+      <div style={{ position: "relative", zIndex: 1, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "100px 24px 60px", textAlign: "center" }}>
 
-        {/* Atmospheric background */}
-        <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-          <Orb style={{ width: "800px", height: "800px", background: "rgba(0,212,255,0.06)", top: "-200px", left: "50%", transform: "translateX(-50%)" }} />
-          <Orb style={{ width: "600px", height: "600px", background: "rgba(139,92,246,0.07)", bottom: "-100px", right: "-150px" }} />
-          <Orb style={{ width: "400px", height: "400px", background: "rgba(16,185,129,0.05)", bottom: "100px", left: "-100px" }} />
-
-          {/* Radial center glow */}
-          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "600px", height: "600px", background: "radial-gradient(circle, rgba(0,212,255,0.04) 0%, transparent 70%)", borderRadius: "50%", pointerEvents: "none" }} />
-
-          {/* Subtle grid */}
-          <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
-
-          {/* Animated rings in hero center */}
-          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "1px", height: "1px" }}>
-            <Ring size={400} color="rgba(0,212,255,0.04)" delay={0} />
-            <Ring size={600} color="rgba(139,92,246,0.03)" delay={1} />
-            <Ring size={800} color="rgba(0,212,255,0.02)" delay={2} />
-          </div>
-
-          {/* Floating particles */}
-          {[...Array(12)].map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{ y: [0, -30, 0], opacity: [0, 0.6, 0] }}
-              transition={{ duration: 4 + i * 0.7, repeat: Infinity, delay: i * 0.5, ease: "easeInOut" }}
-              style={{
-                position: "absolute",
-                width: i % 3 === 0 ? "3px" : "2px",
-                height: i % 3 === 0 ? "3px" : "2px",
-                borderRadius: "50%",
-                background: i % 2 === 0 ? "#00d4ff" : "#8b5cf6",
-                left: `${8 + i * 7}%`,
-                top: `${20 + (i % 5) * 15}%`,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Hero content */}
-        <div style={{ position: "relative", textAlign: "center", maxWidth: "800px" }}>
-
-          {/* Status badge */}
+        {/* Floating particles */}
+        {[...Array(10)].map((_, i) => (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "8px 18px", borderRadius: "999px", background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.18)", marginBottom: "40px", backdropFilter: "blur(12px)" }}
-          >
-            <motion.span
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#00d4ff", display: "inline-block", boxShadow: "0 0 6px #00d4ff" }}
-            />
-            <span style={{ ...mono, color: "#00d4ff", fontSize: "11px", letterSpacing: "0.18em", textTransform: "uppercase" }}>
-              Neural Online · Groq · LLaMA 3.3 70B
+            key={i}
+            animate={{ y: [0, -28, 0], opacity: [0, 0.5, 0] }}
+            transition={{ duration: 5 + i * 0.6, repeat: Infinity, delay: i * 0.5 }}
+            style={{ position: "absolute", width: "2px", height: "2px", borderRadius: "50%", background: i % 2 === 0 ? "#818cf8" : "#6ee7b7", left: `${10 + i * 8}%`, top: `${25 + (i % 4) * 14}%`, pointerEvents: "none" }}
+          />
+        ))}
+
+        {/* Status badge */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "8px 18px", borderRadius: "999px", background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", marginBottom: "48px", backdropFilter: "blur(12px)" }}
+        >
+          <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
+            style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#818cf8", display: "inline-block" }} />
+          <span style={{ ...mono, color: "#818cf8", fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+            AI Online · Groq Connected
+          </span>
+        </motion.div>
+
+        {/* Calligraphic greeting */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          style={{ marginBottom: "16px" }}
+        >
+          <h1 style={{ ...script, fontSize: "clamp(52px, 9vw, 100px)", fontWeight: 300, fontStyle: "italic", lineHeight: 1, letterSpacing: "-0.01em', marginBottom: '0" }}>
+            <span style={{ color: "rgba(255,255,255,0.9)" }}>Hello, </span>
+            <span style={{ background: "linear-gradient(135deg, #c4b5fd 0%, #93c5fd 55%, #6ee7b7 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              {user?.email?.split("@")[0] ?? "friend"}
             </span>
-          </motion.div>
+          </h1>
+        </motion.div>
 
-          {/* Main heading */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <h1 style={{ ...syne, fontSize: "clamp(42px, 8vw, 88px)", fontWeight: 800, lineHeight: 1.05, marginBottom: "6px", letterSpacing: "-0.02em" }}>
-              <span style={{ color: "#ffffff" }}>Welcome back,</span>
-            </h1>
-            <h1 style={{ ...syne, fontSize: "clamp(42px, 8vw, 88px)", fontWeight: 800, lineHeight: 1.05, marginBottom: "32px", letterSpacing: "-0.02em" }}>
-              <span style={{
-                background: "linear-gradient(135deg, #00d4ff 0%, #818cf8 50%, #34d399 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                filter: "drop-shadow(0 0 30px rgba(0,212,255,0.3))",
-              }}>
-                {user?.email?.split("@")[0] ?? "user"}
-              </span>
-            </h1>
-          </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+          style={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.4), rgba(6,182,212,0.3), transparent)", maxWidth: "300px", margin: "0 auto 28px" }}
+        />
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            style={{ ...mono, fontSize: "16px", color: "#8888aa", marginBottom: "48px", lineHeight: 1.6 }}
-          >
-            Your AI that learns from your notes — not the internet.
-          </motion.p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          style={{ ...jakarta, fontSize: "18px", fontWeight: 400, color: "#6868a0", marginBottom: "52px", maxWidth: "480px", lineHeight: 1.6 }}
+        >
+          Your personal AI that learns from your notes
+        </motion.p>
 
-          {/* CTA buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}
-          >
-            <Link href="/notes" style={{ textDecoration: "none" }}>
-              <motion.div
-                whileHover={{ scale: 1.04, boxShadow: "0 0 30px rgba(0,212,255,0.4)" }}
-                whileTap={{ scale: 0.97 }}
-                style={{ display: "flex", alignItems: "center", gap: "10px", padding: "16px 32px", borderRadius: "14px", background: "linear-gradient(135deg, #00d4ff, #818cf8)", color: "#000", ...syne, fontSize: "15px", fontWeight: 700, cursor: "pointer" }}
-              >
-                <Zap size={18} fill="currentColor" />
-                Start Learning
-                <ArrowRight size={16} />
-              </motion.div>
-            </Link>
-            <Link href="/chat" style={{ textDecoration: "none" }}>
-              <motion.div
-                whileHover={{ scale: 1.04, background: "rgba(255,255,255,0.07)" }}
-                whileTap={{ scale: 0.97 }}
-                style={{ display: "flex", alignItems: "center", gap: "10px", padding: "16px 32px", borderRadius: "14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)", color: "#f0f0ff", ...syne, fontSize: "15px", fontWeight: 600, cursor: "pointer", backdropFilter: "blur(12px)" }}
-              >
-                <MessageSquare size={17} />
-                Open Chat
-              </motion.div>
-            </Link>
-          </motion.div>
-        </div>
+        {/* CTA buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}
+        >
+          <Link href="/notes" style={{ textDecoration: "none" }}>
+            <motion.div
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              style={{ display: "flex", alignItems: "center", gap: "10px", padding: "16px 32px", borderRadius: "14px", background: "linear-gradient(135deg, #4f46e5, #7c3aed)", color: "#ffffff", ...jakarta, fontSize: "15px", fontWeight: 600, cursor: "pointer" }}
+            >
+              Add a Note <ArrowRight size={16} />
+            </motion.div>
+          </Link>
+          <Link href="/chat" style={{ textDecoration: "none" }}>
+            <motion.div
+              whileHover={{ scale: 1.04, background: "rgba(255,255,255,0.07)" }}
+              whileTap={{ scale: 0.97 }}
+              style={{ display: "flex", alignItems: "center", gap: "10px", padding: "16px 32px", borderRadius: "14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#d0d0ff", ...jakarta, fontSize: "15px", fontWeight: 600, cursor: "pointer" }}
+            >
+              <MessageSquare size={16} /> Open Chat
+            </motion.div>
+          </Link>
+        </motion.div>
 
         {/* Scroll indicator */}
         <motion.div
@@ -220,42 +239,36 @@ export default function Dashboard() {
           transition={{ duration: 2, repeat: Infinity }}
           style={{ position: "absolute", bottom: "40px", left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}
         >
-          <span style={{ ...mono, fontSize: "10px", color: "#44445a", letterSpacing: "0.2em", textTransform: "uppercase" }}>scroll</span>
-          <div style={{ width: "1px", height: "40px", background: "linear-gradient(180deg, rgba(0,212,255,0.5), transparent)" }} />
+          <span style={{ ...mono, fontSize: "9px", color: "#3a3a5a", letterSpacing: "0.2em", textTransform: "uppercase" }}>scroll</span>
+          <div style={{ width: "1px", height: "36px", background: "linear-gradient(180deg, rgba(139,92,246,0.4), transparent)" }} />
         </motion.div>
       </div>
 
       {/* ── STATS STRIP ── */}
-      <div style={{ padding: "0 24px 80px" }}>
-        <div style={{ maxWidth: "1152px", margin: "0 auto" }}>
+      <div style={{ position: "relative", zIndex: 1, padding: "0 24px 80px" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1px", background: "rgba(255,255,255,0.05)", borderRadius: "20px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)" }}
+            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1px", background: "rgba(255,255,255,0.04)", borderRadius: "20px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)" }}
           >
-            {[
-              { icon: Database, label: "Architecture", value: "RAG + pgvector", color: "#00d4ff" },
-              { icon: Brain, label: "AI Model", value: "LLaMA 3.3 70B", color: "#8b5cf6" },
-              { icon: Zap, label: "Inference", value: "Groq Cloud", color: "#f59e0b" },
-              { icon: TrendingUp, label: "Response Time", value: "< 1 second", color: "#10b981" },
-            ].map((stat, i) => (
+            {stats.map((stat, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{ background: "rgba(255,255,255,0.04)" }}
-                style={{ display: "flex", alignItems: "center", gap: "14px", padding: "28px 28px", background: "#030308", transition: "background 0.2s" }}
+                transition={{ delay: i * 0.08 }}
+                whileHover={{ background: "rgba(255,255,255,0.03)" }}
+                style={{ display: "flex", alignItems: "center", gap: "14px", padding: "24px", background: "rgba(3,3,12,0.8)", transition: "background 0.2s" }}
               >
-                <div style={{ width: "44px", height: "44px", borderRadius: "12px", background: `${stat.color}15`, border: `1px solid ${stat.color}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <stat.icon size={18} style={{ color: stat.color }} />
+                <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: `${stat.color}12`, border: `1px solid ${stat.color}25`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <stat.icon size={17} style={{ color: stat.color }} />
                 </div>
                 <div>
-                  <p style={{ ...mono, fontSize: "10px", color: "#44445a", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: "4px" }}>{stat.label}</p>
-                  <p style={{ ...syne, fontSize: "16px", fontWeight: 700, color: "#f0f0ff" }}>{stat.value}</p>
+                  <p style={{ ...mono, fontSize: "9px", color: "#3a3a5a", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: "3px" }}>{stat.label}</p>
+                  <p style={{ ...jakarta, fontSize: "15px", fontWeight: 600, color: "#e0e0ff" }}>{stat.value}</p>
                 </div>
               </motion.div>
             ))}
@@ -263,70 +276,56 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── FEATURE CARDS ── */}
-      <div style={{ padding: "0 24px 100px" }}>
-        <div style={{ maxWidth: "1152px", margin: "0 auto" }}>
+      {/* ── FEATURES ── */}
+      <div style={{ position: "relative", zIndex: 1, padding: "0 24px 100px" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            style={{ textAlign: "center", marginBottom: "60px" }}
+            style={{ textAlign: "center", marginBottom: "56px" }}
           >
-            <p style={{ ...mono, fontSize: "11px", color: "#00d4ff", letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: "14px" }}>What you can do</p>
-            <h2 style={{ ...syne, fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em" }}>
+            <p style={{ ...mono, fontSize: "10px", color: "#6366f1", letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: "12px" }}>What you can do</p>
+            <h2 style={{ ...script, fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 300, fontStyle: "italic", color: "#ffffff", letterSpacing: "-0.01em" }}>
               Three tools. One brain.
             </h2>
           </motion.div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
             {features.map((f, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 0, y: 32 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ delay: i * 0.12, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               >
-                <Link href={f.href} style={{ textDecoration: "none", display: "block" }}>
+                <Link href={f.href} style={{ textDecoration: "none", display: "block", height: "100%" }}>
                   <motion.div
-                    whileHover={{ y: -6, boxShadow: `0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px ${f.borderGlow}` }}
-                    transition={{ duration: 0.25 }}
-                    style={{ position: "relative", padding: "36px", borderRadius: "24px", background: f.gradient, border: `1px solid ${f.borderGlow}`, overflow: "hidden", cursor: "pointer", height: "100%" }}
+                    whileHover={{ y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ position: "relative", padding: "32px", borderRadius: "22px", background: f.accentDim, border: `1px solid ${f.accentBorder}`, overflow: "hidden", cursor: "pointer", height: "100%", backdropFilter: "blur(8px)" }}
                   >
-                    {/* Card number watermark */}
-                    <div style={{ position: "absolute", top: "20px", right: "24px", ...syne, fontSize: "56px", fontWeight: 800, color: "rgba(255,255,255,0.04)", lineHeight: 1, userSelect: "none" }}>
+                    {/* Top accent line */}
+                    <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: "1px", background: `linear-gradient(90deg, transparent, ${f.accent}, transparent)` }} />
+
+                    {/* Number watermark */}
+                    <div style={{ position: "absolute", top: "16px", right: "20px", ...script, fontSize: "52px", fontWeight: 300, fontStyle: "italic", color: "rgba(255,255,255,0.04)", lineHeight: 1, userSelect: "none" }}>
                       {f.number}
                     </div>
 
-                    {/* Top glow line */}
-                    <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: "1px", background: `linear-gradient(90deg, transparent, ${f.iconColor}, transparent)` }} />
-
-                    {/* Tag */}
-                    <div style={{ display: "inline-flex", alignItems: "center", padding: "5px 12px", borderRadius: "6px", background: `${f.iconColor}15`, border: `1px solid ${f.iconColor}30`, marginBottom: "24px" }}>
-                      <span style={{ ...mono, fontSize: "9px", fontWeight: 700, color: f.tagColor, letterSpacing: "0.15em" }}>{f.tag}</span>
+                    {/* Icon */}
+                    <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: `${f.accent}15`, border: `1px solid ${f.accent}25`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "22px" }}>
+                      <f.icon size={22} style={{ color: f.accent }} />
                     </div>
 
-                    {/* Icon with glow */}
-                    <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      style={{ width: "56px", height: "56px", borderRadius: "16px", background: `${f.iconColor}15`, border: `1px solid ${f.iconColor}30`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "24px", boxShadow: `0 0 20px ${f.iconGlow}` }}
-                    >
-                      <f.icon size={24} style={{ color: f.iconColor }} />
-                    </motion.div>
+                    <h3 style={{ ...jakarta, fontSize: "20px", fontWeight: 700, color: "#ffffff", marginBottom: "10px" }}>{f.title}</h3>
+                    <p style={{ ...jakarta, fontSize: "14px", lineHeight: 1.75, color: "#6868a0", marginBottom: "24px" }}>{f.description}</p>
 
-                    <h3 style={{ ...syne, fontSize: "22px", fontWeight: 700, color: "#ffffff", marginBottom: "12px" }}>{f.title}</h3>
-                    <p style={{ fontSize: "14px", lineHeight: 1.75, color: "#9999bb", marginBottom: "28px" }}>{f.description}</p>
-
-                    <motion.div
-                      whileHover={{ gap: "14px" }}
-                      style={{ display: "flex", alignItems: "center", gap: "8px", ...syne, fontSize: "14px", fontWeight: 600, color: f.iconColor }}
-                    >
-                      {f.cta}
-                      <motion.div whileHover={{ x: 4 }}>
-                        <ArrowRight size={15} />
-                      </motion.div>
-                    </motion.div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", ...jakarta, fontSize: "14px", fontWeight: 600, color: f.accent }}>
+                      {f.cta} <ArrowRight size={14} />
+                    </div>
                   </motion.div>
                 </Link>
               </motion.div>
@@ -336,40 +335,36 @@ export default function Dashboard() {
       </div>
 
       {/* ── HOW IT WORKS ── */}
-      <div style={{ padding: "0 24px 100px" }}>
-        <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{ textAlign: "center", marginBottom: "60px" }}
-          >
-            <p style={{ ...mono, fontSize: "11px", color: "#8b5cf6", letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: "14px" }}>How it works</p>
-            <h2 style={{ ...syne, fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em" }}>
+      <div style={{ position: "relative", zIndex: 1, padding: "0 24px 100px" }}>
+        <div style={{ maxWidth: "820px", margin: "0 auto" }}>
+          <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            style={{ textAlign: "center", marginBottom: "52px" }}>
+            <p style={{ ...mono, fontSize: "10px", color: "#8b5cf6", letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: "12px" }}>How it works</p>
+            <h2 style={{ ...script, fontSize: "clamp(30px, 4vw, 48px)", fontWeight: 300, fontStyle: "italic", color: "#ffffff" }}>
               Three steps to smarter learning
             </h2>
           </motion.div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
             {[
-              { step: "01", title: "Add your notes", desc: "Paste anything — study notes, docs, code snippets, ideas. MentorAI vectorizes each entry instantly.", color: "#00d4ff" },
+              { step: "01", title: "Add your notes", desc: "Paste anything — study notes, docs, code snippets. MentorAI vectorizes each entry instantly.", color: "#6366f1" },
               { step: "02", title: "Ask anything", desc: "Chat naturally. The AI searches your knowledge base semantically and surfaces the most relevant notes.", color: "#8b5cf6" },
-              { step: "03", title: "Get smart answers", desc: "Receive answers grounded in YOUR knowledge, with citations showing exactly which notes were used.", color: "#10b981" },
+              { step: "03", title: "Get smart answers", desc: "Receive answers grounded in your knowledge, with citations showing which notes were used.", color: "#06b6d4" },
             ].map((item, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -16 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
-                whileHover={{ x: 6 }}
-                style={{ display: "flex", gap: "24px", padding: "28px 32px", borderRadius: "16px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", cursor: "default", transition: "border-color 0.2s", alignItems: "center" }}
+                transition={{ delay: i * 0.12 }}
+                whileHover={{ x: 5 }}
+                style={{ display: "flex", gap: "24px", padding: "26px 30px", borderRadius: "16px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", alignItems: "center" }}
               >
-                <div style={{ ...syne, fontSize: "42px", fontWeight: 800, color: item.color, opacity: 0.4, flexShrink: 0, lineHeight: 1, width: "70px" }}>{item.step}</div>
-                <div style={{ width: "1px", height: "50px", background: `linear-gradient(180deg, transparent, ${item.color}, transparent)`, flexShrink: 0 }} />
+                <div style={{ ...script, fontSize: "44px", fontWeight: 300, fontStyle: "italic", color: item.color, opacity: 0.5, flexShrink: 0, lineHeight: 1, width: "68px" }}>{item.step}</div>
+                <div style={{ width: "1px", height: "44px", background: `linear-gradient(180deg, transparent, ${item.color}, transparent)`, flexShrink: 0 }} />
                 <div>
-                  <h4 style={{ ...syne, fontSize: "18px", fontWeight: 700, color: "#f0f0ff", marginBottom: "6px" }}>{item.title}</h4>
-                  <p style={{ fontSize: "14px", color: "#8888aa", lineHeight: 1.6 }}>{item.desc}</p>
+                  <h4 style={{ ...jakarta, fontSize: "17px", fontWeight: 700, color: "#e8e8ff", marginBottom: "5px" }}>{item.title}</h4>
+                  <p style={{ ...jakarta, fontSize: "14px", color: "#5a5a7a", lineHeight: 1.6 }}>{item.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -378,54 +373,41 @@ export default function Dashboard() {
       </div>
 
       {/* ── FINAL CTA ── */}
-      <div style={{ padding: "0 24px 100px" }}>
-        <div style={{ maxWidth: "1152px", margin: "0 auto" }}>
+      <div style={{ position: "relative", zIndex: 1, padding: "0 24px 100px" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            style={{ position: "relative", padding: "64px 48px", borderRadius: "28px", background: "linear-gradient(135deg, rgba(0,212,255,0.06) 0%, rgba(139,92,246,0.06) 50%, rgba(16,185,129,0.06) 100%)", border: "1px solid rgba(255,255,255,0.08)", textAlign: "center", overflow: "hidden" }}
+            style={{ position: "relative", padding: "64px 48px", borderRadius: "28px", background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.12)", textAlign: "center", overflow: "hidden", backdropFilter: "blur(8px)" }}
           >
-            {/* Background rings */}
-            <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "1px", height: "1px", pointerEvents: "none" }}>
-              <Ring size={300} color="rgba(0,212,255,0.06)" delay={0} />
-              <Ring size={500} color="rgba(139,92,246,0.04)" delay={1} />
-            </div>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.5), rgba(6,182,212,0.4), transparent)" }} />
 
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg, transparent, rgba(0,212,255,0.5), rgba(139,92,246,0.5), transparent)" }} />
+            <motion.h2
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              style={{ ...script, fontSize: "clamp(32px, 5vw, 60px)", fontWeight: 300, fontStyle: "italic", color: "#ffffff", marginBottom: "16px", letterSpacing: "-0.01em" }}
+            >
+              Your knowledge. Your AI.
+            </motion.h2>
 
-            <div style={{ position: "relative" }}>
+            <p style={{ ...jakarta, fontSize: "16px", color: "#5a5a7a", marginBottom: "40px", maxWidth: "440px", margin: "0 auto 40px", lineHeight: 1.7 }}>
+              Add your first note and watch MentorAI become the smartest assistant you've ever had.
+            </p>
+
+            <Link href="/notes" style={{ textDecoration: "none" }}>
               <motion.div
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
-                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "70px", height: "70px", borderRadius: "20px", background: "rgba(0,212,255,0.1)", border: "1px solid rgba(0,212,255,0.25)", marginBottom: "28px", boxShadow: "0 0 30px rgba(0,212,255,0.2)" }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "10px", padding: "16px 36px", borderRadius: "14px", background: "linear-gradient(135deg, #4f46e5, #7c3aed)", color: "#ffffff", ...jakarta, fontSize: "16px", fontWeight: 600, cursor: "pointer" }}
               >
-                <Zap size={30} style={{ color: "#00d4ff" }} fill="#00d4ff" />
+                Get Started <ArrowRight size={18} />
               </motion.div>
-
-              <h2 style={{ ...syne, fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 800, color: "#ffffff", marginBottom: "16px", letterSpacing: "-0.02em" }}>
-                Your knowledge. Your AI.
-              </h2>
-              <p style={{ ...mono, fontSize: "15px", color: "#8888aa", marginBottom: "40px", maxWidth: "480px", margin: "0 auto 40px" }}>
-                Add your first note and watch MentorAI become the smartest assistant you've ever had.
-              </p>
-
-              <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
-                <Link href="/notes" style={{ textDecoration: "none" }}>
-                  <motion.div
-                    whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(0,212,255,0.4)" }}
-                    whileTap={{ scale: 0.97 }}
-                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "16px 36px", borderRadius: "14px", background: "linear-gradient(135deg, #00d4ff, #818cf8)", color: "#000", ...syne, fontSize: "16px", fontWeight: 700, cursor: "pointer" }}
-                  >
-                    Add First Note <ArrowRight size={18} />
-                  </motion.div>
-                </Link>
-              </div>
-            </div>
+            </Link>
           </motion.div>
         </div>
       </div>
-
     </div>
   );
 }

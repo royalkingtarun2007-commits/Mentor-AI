@@ -17,19 +17,28 @@ export default function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [fontLoaded, setFontLoaded] = useState(false);
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
 
   useEffect(() => {
-    // Load fonts
+    // Preload font before rendering logo
     const link = document.createElement("link");
     link.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap";
     link.rel = "stylesheet";
+    link.onload = () => setFontLoaded(true);
     document.head.appendChild(link);
+
+    // Fallback if onload doesn't fire
+    const timer = setTimeout(() => setFontLoaded(true), 1000);
 
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(timer);
+    };
   }, []);
 
   function handleLogout() {
@@ -55,36 +64,27 @@ export default function Navbar() {
       }}>
         <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 28px", height: "68px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
 
-          {/* Logo — calligraphic, no icon */}
-          <Link href={user ? "/dashboard" : "/"} style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
-            <motion.div
-              whileHover={{ scale: 1.03 }}
-              transition={{ duration: 0.2 }}
-              style={{ position: "relative" }}
-            >
-              <span style={{
-                ...script,
-                fontSize: "28px",
-                fontWeight: 400,
-                fontStyle: "italic",
-                letterSpacing: "0.04em",
-                background: scrolled
-                  ? "linear-gradient(135deg, #c4b5fd 0%, #93c5fd 60%, #6ee7b7 100%)"
-                  : "linear-gradient(135deg, #e2d9ff 0%, #bfdbfe 60%, #a7f3d0 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                transition: "all 0.3s",
-              }}>
-                MentorAI
-              </span>
-              {/* Subtle underline that appears on hover */}
-              <motion.div
-                initial={{ scaleX: 0, opacity: 0 }}
-                whileHover={{ scaleX: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                style={{ position: "absolute", bottom: "-2px", left: "5%", right: "5%", height: "1px", background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.5), rgba(6,182,212,0.4), transparent)", transformOrigin: "left" }}
-              />
+          {/* Logo — only render when font is loaded to avoid flash */}
+          <Link href={user ? "/dashboard" : "/"} style={{ textDecoration: "none" }}>
+            <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }} style={{ position: "relative" }}>
+              {fontLoaded ? (
+                <span style={{
+                  ...script,
+                  fontSize: "28px",
+                  fontWeight: 400,
+                  fontStyle: "italic",
+                  letterSpacing: "0.04em",
+                  background: "linear-gradient(135deg, #c4b5fd 0%, #93c5fd 60%, #6ee7b7 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}>
+                  MentorAI
+                </span>
+              ) : (
+                // Placeholder while font loads — same size, invisible
+                <span style={{ fontSize: "28px", opacity: 0, ...script }}>MentorAI</span>
+              )}
             </motion.div>
           </Link>
 
@@ -124,7 +124,6 @@ export default function Navbar() {
                     }}
                   >
                     {link.label}
-                    {/* Active dot indicator */}
                     {active && (
                       <motion.span
                         layoutId="activeNav"
@@ -151,8 +150,7 @@ export default function Navbar() {
                   (e.currentTarget as HTMLButtonElement).style.borderColor = "transparent";
                 }}
               >
-                <LogOut size={14} />
-                Logout
+                <LogOut size={14} /> Logout
               </button>
             </nav>
           )}
